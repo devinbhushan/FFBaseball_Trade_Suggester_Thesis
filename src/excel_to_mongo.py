@@ -22,7 +22,7 @@ for curr in files:
 			else:
 				new_player = {}
 				try:
-					last_name, first_name = row[0].split(", ")
+					last_name, first_name = [name.strip() for name in row[0].split(",")]
 				except ValueError:
 					break
 				new_player["last_name"] = last_name
