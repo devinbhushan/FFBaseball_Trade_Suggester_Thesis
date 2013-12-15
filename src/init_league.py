@@ -7,7 +7,7 @@ from mongo_conn import get_client
 # and look them all up and insert them into the team's document
 
 def main():
-	teams = json.load(open("../data/teams.json"))
+	leagues = json.load(open("../data/teams.json"))
 	
 	client = get_client()
 	thesis_db = client.fbaseball_thesis
@@ -15,9 +15,13 @@ def main():
 	pitchers_collection = thesis_db.pitchers
 	teams_collection = thesis_db.teams
 
+	league = leagues["league"]
+	league_name = league["name"]
+	teams = league["teams"]
+	league_obj = {"name": league_name}
 	team_obj = {}
 	for team in teams:
-		team_obj[team] = []
+		league_obj[team] = []
 		for player in teams[team]["query"]["results"]["team"]["roster"]["players"]["player"]:
 			try:
 				db_match = players_collection.find({"first_name": player["name"]["ascii_first"], 
@@ -33,10 +37,9 @@ def main():
 			db_match["POS"] = player["eligible_positions"]["position"]
 
 			# Append this player to the team list
-			team_obj[team].append(db_match)
-
-	teams_collection.save(team_obj)
-
+			league_obj[team].append(db_match)
+	
+	teams_collection.save(league_obj)
 
 if __name__ == "__main__":
 	main()
