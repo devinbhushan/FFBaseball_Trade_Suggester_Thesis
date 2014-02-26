@@ -19,9 +19,10 @@ def main():
 	league_name = league["name"]
 	teams = league["teams"]
 	league_obj = {"name": league_name}
-	team_obj = {}
+	league_obj["teams"] = []
+
 	for team in teams:
-		league_obj[team] = []
+		team_obj = []
 		for player in teams[team]["query"]["results"]["team"]["roster"]["players"]["player"]:
 			try:
 				db_match = players_collection.find({"first_name": player["name"]["ascii_first"], 
@@ -37,7 +38,8 @@ def main():
 			db_match["POS"] = player["eligible_positions"]["position"]
 
 			# Append this player to the team list
-			league_obj[team].append(db_match)
+			team_obj.append(db_match)
+		league_obj["teams"].append(team_obj)
 	
 	teams_collection.save(league_obj)
 

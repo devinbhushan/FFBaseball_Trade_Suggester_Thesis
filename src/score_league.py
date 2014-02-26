@@ -7,7 +7,7 @@ from mongo_conn import get_client
 def score_player_set(players_collection, scoring):
 	for player in players_collection.find():
 		# get items back in pairs (ex: (first_name, Todd))
-		player["points"] = 0
+		plarfcdyer["points"] = 0
 		for key, value in zip(player.keys(), player.values()):
 			if key in scoring.keys():
 				player["points"] += (float(value) * float(scoring[key]))
