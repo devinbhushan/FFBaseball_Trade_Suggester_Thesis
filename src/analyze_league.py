@@ -10,6 +10,7 @@ def find_optimal_lineups(roster_settings, teams):
 
 	for team in teams:
 		optimal_team = {}
+		
 		# Set optimal lineup to empty based on roster settings
 		for pos in roster_settings.keys():
 			optimal_team[pos] = None
@@ -19,6 +20,7 @@ def find_optimal_lineups(roster_settings, teams):
 			# TODO
 			# 
 			# 
+			pass
 		
 	pass
 
