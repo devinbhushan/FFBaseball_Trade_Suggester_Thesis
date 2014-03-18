@@ -34,7 +34,6 @@ def main():
 				except IndexError:
 					print "Player in teams.json does not match DB. Player", player["name"]["full"], "Skipping."
 					continue
-					# sys.exit(0)
 			db_match["POS"] = player["eligible_positions"]["position"]
 
 			# Append this player to the team list

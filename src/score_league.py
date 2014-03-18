@@ -11,10 +11,7 @@ def score_player_set(players_collection, scoring):
 		for key, value in zip(player.keys(), player.values()):
 			if key in scoring.keys():
 				player["points"] += (float(value) * float(scoring[key]))
-				# print "key:", key, "value:", value, "multiplicand:", scoring[key]
 		players_collection.save(player)
-		# print "Total points:", player["points"]
-		# break
 
 def main():
 	scoring_settings = json.load(open("../data/scoring_settings.json"))
