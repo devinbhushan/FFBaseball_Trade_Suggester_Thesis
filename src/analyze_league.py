@@ -15,10 +15,13 @@ def _create_graph(team, team_graph_dict):
 	# Create graph of players from each team
 	for player in team:
 		for pos in pos_list:
-			if pos in player["POS"]:
-				team_graph_dict[pos].append(player)
-			else:
-				team_graph_dict[pos].append(0)
+			for curr_pos in player["POS"]:
+				if curr_pos == "P":
+					continue
+				elif curr_pos in pos:
+					team_graph_dict[pos].append(player)
+				else:
+					team_graph_dict[pos].append(0)
 
 	return team_graph_dict
 
@@ -37,7 +40,7 @@ def _create_cost_graph(profit_graph):
 	    		col = sys.maxsize
 	        cost_row += [col]
 	    cost_matrix += [cost_row]
-	# pprint(cost_matrix)
+
 	return cost_matrix
 
 def find_optimal_lineups(roster_settings, league):
@@ -65,8 +68,9 @@ def find_optimal_lineups(roster_settings, league):
 			for pos in sorted(roster_settings.keys()):
 				if pos == 'P':
 					continue
-				optimal_team[pos] = None
-				team_graph_dict[pos] = []
+				for i in xrange(roster_settings[pos]):
+					optimal_team[pos+str(i)] = None
+					team_graph_dict[pos+str(i)] = []
 
 			# Get profit_matrix in form of dictionary mapped to positions
 			team_graph_dict = _create_graph(team, team_graph_dict)
@@ -90,7 +94,7 @@ def find_optimal_lineups(roster_settings, league):
 			indexes = m.compute(cost_matrix)
 
 			for (x,y) in indexes:
-				pprint("Optimal lineup %s" % profit_matrix[x][y])
+				pprint("%s: %s" % (sorted(team_graph_dict.keys())[x], profit_matrix[x][y]))
 
 	return None
 
