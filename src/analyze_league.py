@@ -1,7 +1,9 @@
 import json, sys
 from pprint import pprint
 from mongo_conn import get_client
+import munkres
 from munkres import Munkres
+import math
 
 def _create_graph(team, team_graph_dict):
 	"""
@@ -14,7 +16,7 @@ def _create_graph(team, team_graph_dict):
 	for player in team:
 		for pos in pos_list:
 			if pos in player["POS"]:
-				team_graph_dict[pos].append(player["points"])
+				team_graph_dict[pos].append(player)
 			else:
 				team_graph_dict[pos].append(0)
 
@@ -29,7 +31,9 @@ def _create_cost_graph(profit_graph):
 	for row in profit_graph:
 	    cost_row = []
 	    for col in row:
-	        cost_row += [sys.maxsize - col]
+	    	if not col == 0:
+	    		col = sys.maxsize - col
+	        cost_row += [col]
 	    cost_matrix += [cost_row]
 	pprint(cost_matrix)
 	return cost_matrix
@@ -69,22 +73,27 @@ def find_optimal_lineups(roster_settings, league):
 			# Convert team_graph to profit_matrix
 			profit_matrix = []
 			for j, pos in enumerate(sorted(team_graph_dict.keys())):
-				profit_matrix.append(team_graph_dict[pos])
-			# pprint(profit_matrix)
+				curr_row = []
+				for curr_player in team_graph_dict[pos]:
+					if curr_player == 0:
+						curr_row.append(0)
+					else:
+						curr_row.append(int(curr_player["points"]))
+				profit_matrix.append(curr_row)
+			pprint("profit_matrix: %s" % profit_matrix)
 
-			# pprint(profit_matrix)
 			# Convert profit_matrix to cost_matrix
-			cost_matrix = _create_cost_graph(profit_matrix)
+			cost_matrix = munkres.make_cost_matrix(profit_matrix, lambda cost: sys.maxsize - cost)# _create_cost_graph(profit_matrix)
 
 			# Call munkres graph solve on cost_matrix
 			m = Munkres()
 			indexes = m.compute(cost_matrix)
-			#pprint(indexes)
+			# pprint(indexes)
 
-			print "Optimal lineup"
 			for (x,y) in indexes:
-				pprint(cost_matrix[x][y])
-			#print team_graph_dict.keys()
+				pprint("(%s, %s)" % (y, x))
+				pprint("Optimal lineup %s" % profit_matrix[x][y])
+			# print team_graph_dict.keys()
 
 
 
