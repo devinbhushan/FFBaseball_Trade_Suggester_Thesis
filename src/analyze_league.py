@@ -32,10 +32,12 @@ def _create_cost_graph(profit_graph):
 	    cost_row = []
 	    for col in row:
 	    	if not col == 0:
-	    		col = sys.maxsize - col
+	    		col = sys.maxsize - int(col["points"])
+	    	else:
+	    		col = sys.maxsize
 	        cost_row += [col]
 	    cost_matrix += [cost_row]
-	pprint(cost_matrix)
+	# pprint(cost_matrix)
 	return cost_matrix
 
 def find_optimal_lineups(roster_settings, league):
@@ -69,7 +71,6 @@ def find_optimal_lineups(roster_settings, league):
 			# Get profit_matrix in form of dictionary mapped to positions
 			team_graph_dict = _create_graph(team, team_graph_dict)
 
-			# pprint(team_graph_dict)
 			# Convert team_graph to profit_matrix
 			profit_matrix = []
 			for j, pos in enumerate(sorted(team_graph_dict.keys())):
@@ -78,24 +79,18 @@ def find_optimal_lineups(roster_settings, league):
 					if curr_player == 0:
 						curr_row.append(0)
 					else:
-						curr_row.append(int(curr_player["points"]))
+						curr_row.append(curr_player)
 				profit_matrix.append(curr_row)
-			pprint("profit_matrix: %s" % profit_matrix)
 
 			# Convert profit_matrix to cost_matrix
-			cost_matrix = munkres.make_cost_matrix(profit_matrix, lambda cost: sys.maxsize - cost)# _create_cost_graph(profit_matrix)
-			pprint("cost_matrix: %s" % cost_matrix)
+			cost_matrix = _create_cost_graph(profit_matrix)
+
 			# Call munkres graph solve on cost_matrix
 			m = Munkres()
 			indexes = m.compute(cost_matrix)
-			# pprint(indexes)
 
 			for (x,y) in indexes:
-				pprint("(%s, %s)" % (y, x))
 				pprint("Optimal lineup %s" % profit_matrix[x][y])
-			# print team_graph_dict.keys()
-
-
 
 	return None
 
