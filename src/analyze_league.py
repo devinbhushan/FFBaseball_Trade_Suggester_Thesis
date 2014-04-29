@@ -84,7 +84,7 @@ def find_optimal_lineups(roster_settings, league):
 
 			# Convert profit_matrix to cost_matrix
 			cost_matrix = munkres.make_cost_matrix(profit_matrix, lambda cost: sys.maxsize - cost)# _create_cost_graph(profit_matrix)
-
+			pprint("cost_matrix: %s" % cost_matrix)
 			# Call munkres graph solve on cost_matrix
 			m = Munkres()
 			indexes = m.compute(cost_matrix)
