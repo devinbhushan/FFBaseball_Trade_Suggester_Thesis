@@ -60,7 +60,6 @@ def find_optimal_lineups(roster_settings, league):
 			# Sort team lexicographically to ensure ordering for calculations
 			team = sorted(team, key = lambda k: k["_id"])
 
-			optimal_league[i] = {}
 			optimal_team = {}
 			team_graph_dict = {}
 
@@ -68,9 +67,9 @@ def find_optimal_lineups(roster_settings, league):
 			for pos in sorted(roster_settings.keys()):
 				if pos == 'P':
 					continue
-				for i in xrange(roster_settings[pos]):
-					optimal_team[pos+str(i)] = None
-					team_graph_dict[pos+str(i)] = []
+				for j in xrange(roster_settings[pos]):
+					optimal_team[pos] = []
+					team_graph_dict[pos+str(j)] = []
 
 			# Get profit_matrix in form of dictionary mapped to positions
 			team_graph_dict = _create_graph(team, team_graph_dict)
@@ -93,10 +92,27 @@ def find_optimal_lineups(roster_settings, league):
 			m = Munkres()
 			indexes = m.compute(cost_matrix)
 
+			# Create optimal lineup by gathering proper indexes
 			for (x,y) in indexes:
-				pprint("%s: %s" % (sorted(team_graph_dict.keys())[x], profit_matrix[x][y]))
+				optimal_team[sorted(team_graph_dict.keys())[x][:-1]].append(profit_matrix[x][y])
 
-	return None
+			optimal_league[i] = optimal_team
+
+	return optimal_league
+
+def store_lineups(optimal_league):
+	"""
+	Takes optimal league and stores each team's optimal lineup, along with
+	positional averages in the DB
+	"""
+	pass
+
+def find_str_weakness(team_id):
+	"""
+	Takes team id and from there, finds strong and weak positions based on
+	points and league averages.
+	"""
+	pass
 
 def main():
 	client = get_client()
@@ -104,7 +120,10 @@ def main():
 	league_collection = thesis_db.teams
 
 	roster_settings = json.load(open("../data/roster_settings.json"))
-	optimal_lineups = find_optimal_lineups(roster_settings, league_collection.find({}))
+	optimal_league = find_optimal_lineups(roster_settings, league_collection.find({}))
+	store_lineups(optimal_league)
+	find_str_weakness(0)
+
 
 if __name__ == "__main__":
 	main()
