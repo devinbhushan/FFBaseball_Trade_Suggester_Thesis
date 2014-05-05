@@ -56,7 +56,7 @@ def find_optimal_lineups(roster_settings, league):
 		
 		#Go through each team and find it's optimal lineup using _create_graph
 		for i, team in enumerate(curr_league["teams"]):
-			print "NEW TEAM %s \n-------------------------" % i
+			# print "NEW TEAM %s \n-------------------------" % i
 			# Sort team lexicographically to ensure ordering for calculations
 			team = sorted(team, key = lambda k: k["_id"])
 
@@ -96,23 +96,72 @@ def find_optimal_lineups(roster_settings, league):
 			for (x,y) in indexes:
 				optimal_team[sorted(team_graph_dict.keys())[x][:-1]].append(profit_matrix[x][y])
 
-			optimal_league[i] = optimal_team
+			optimal_league[str(i)] = optimal_team
 
-	return optimal_league
+	return (optimal_league, team_graph_dict)
 
-def store_lineups(optimal_league):
+def store_lineups(optimal_league, roster_settings, thesis_db):
 	"""
 	Takes optimal league and stores each team's optimal lineup, along with
 	positional averages in the DB
 	"""
-	pass
+	optimal_team_collection = thesis_db.optimal_teams
 
-def find_str_weakness(team_id):
+	positional_avg = {}
+
+	for pos in roster_settings:
+		curr_total = 0
+		num_players = 0
+		for key in optimal_league:
+			curr_team = optimal_league[key]
+
+			for player in curr_team[pos]:
+				try:
+					curr_total += player["points"]
+					num_players += 1
+				except TypeError:
+					continue
+		print "Position: %s Average Points: %s" % (pos, (float(curr_total) / float(num_players)))
+		positional_avg[pos] = (float(curr_total) / float(num_players))
+	return positional_avg
+
+def find_str_weakness(team_id, optimal_league, positional_avg):
 	"""
 	Takes team id and from there, finds strong and weak positions based on
 	points and league averages.
 	"""
-	pass
+	strengths = []
+	weaknesses = []
+	for key in optimal_league[team_id]:
+		for player in optimal_league[team_id][key]:
+			if player == 0:
+				continue
+			if player["points"] > positional_avg[key]:
+				strengths.append((player, key))
+			else:
+				weaknesses.append((player, key))
+
+	return (strengths, weaknesses)
+
+def _find_partners(team_id, chart):
+	"""
+	Takes a str/weakness chart and finds trade partners for a given team id
+	"""
+	temp_my_str, temp_my_weak = chart[team_id]
+	my_str = [seq[1] for seq in temp_my_str]
+	my_weak = [seq[1] for seq in temp_my_weak]
+
+	for t_id in chart:
+		if team_id == t_id:
+			continue
+		else:
+			temp_given_str, temp_given_weak = chart[t_id]
+			given_str = [seq[1] for seq in temp_given_str]
+			given_weak = [seq[1] for seq in temp_given_weak]
+			str_intersect = list(set(my_str).intersection(set(given_weak)))
+			weakness_intersect = list(set(my_weak).intersection(set(given_str)))
+			pprint("Trade %s from my team's (team %s) strength to team %s's weakness" % (str_intersect, team_id, t_id))
+			pprint("Acquire %s from team %s to fill my team's (team %s) weakness" % (weakness_intersect, t_id, team_id))
 
 def main():
 	client = get_client()
@@ -120,10 +169,15 @@ def main():
 	league_collection = thesis_db.teams
 
 	roster_settings = json.load(open("../data/roster_settings.json"))
-	optimal_league = find_optimal_lineups(roster_settings, league_collection.find({}))
-	store_lineups(optimal_league)
-	find_str_weakness(0)
+	optimal_league, team_graph_dict = find_optimal_lineups(roster_settings, league_collection.find({}))
+	positional_avg = store_lineups(optimal_league, roster_settings, thesis_db)
 
+	str_weakness_chart = {}
+	for team_id in optimal_league:
+		str_weakness_chart[team_id] = find_str_weakness(str(team_id), optimal_league, positional_avg)
+
+	_find_partners("0", str_weakness_chart)
+	# print str_weakness_chart["0"][0]
 
 if __name__ == "__main__":
 	main()
