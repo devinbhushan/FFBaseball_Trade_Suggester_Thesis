@@ -2,7 +2,7 @@
 % By: Devin Bhushan | Advisor: Prof. Luke Olson
 % 9-May-2014
 
-<!-- pandoc thesis.md --toc -V documentclass=scrreprt -o thesis.pdf -->
+<!-- pandoc thesis.md --toc -V documentclass=scrreprt -o bhushan1_thesis.pdf -->
 
 Abstract
 ==========================
@@ -31,7 +31,7 @@ I have played Fantasy Baseball since I was just 14 years old. Over the years, I 
 
 Over the past few seasons, I have found myself having a hard time analyzing trades that would be beneficial for both my team and a potential partner. It is very time consuming to look through a whole league's worth of teams (somewhere between 8 and 12) and finding a valuable deal that would be worthwhile for both teams. Often this results in very few trades taking place in the league. While this is a consequence most leagues have accepted and are complacent with, I think it would add a whole new dynamic of competitiveness to the game if a piece of software existed that could not only algorithmically identify trade partners for your team, but also suggest which positions each team needs and might want to trade away.
 
-Therefore, the idea for __TODO NAME__ was born. The goal for __TODO NAME__ is to eventually be put into production such that it can hook into an active Fantasy Baseball league, a data source for statistical projections and provide a user with potential trade partners and specific trade suggestions that would be beneficial for both teams. While trades are generally subjective in nature, this paper serves as a means of analyzing trades through the lens of statistical prowess that the Sabermetric community has only recently been polishing.
+Therefore, the idea for this project was born. The goal for it is to eventually be put into production such that it can hook into an active Fantasy Baseball league, a data source for statistical projections and provide a user with potential trade partners and specific trade suggestions that would be beneficial for both teams. While trades are generally subjective in nature, this paper serves as a means of analyzing trades through the lens of statistical prowess that the Sabermetric community has only recently been polishing.
 
 Technologies Used
 ==========================
@@ -120,28 +120,50 @@ However, Munkres' algorithm solves for a least-cost solution. Each player's proj
 
 ![Sample inverted-cost assignment matrix to find optimal lineup](/Users/Devin/Projects/FFBaseball_Trade_Suggester_Thesis/thesis_lib/assignment_matrix.png)
 
-The previous sample lineup of players is illustrated in __Figure 5.5__ in a matrix appropriate to be used for Munkres' assignment problem. Solving this case by hand would require all permutations of this matrix such that no row and column are used more than once. Then the matrix corresponding to the permutation which produces the least amount of points (since it is an inverted matrix) would be the solution. In this case, there are multiple solutions that are considered optimal so any of them are acceptable. Running the assignment problem on this problem gives us the indexes of elements which belong in a lineup that belongs to the set of optimal lineups. __Figure 5.6__ outlines this process for the sample case.
+The previous sample lineup of players is illustrated in __Figure 5.5__ in a matrix appropriate to be used for Munkres' assignment problem. Solving this case by hand would require all permutations of this matrix such that no row and column are used more than once.^[The Munkres module used for this project automatically takes rectangular matrices, like the ones produced by fantasy baseball teams (since there are more players on a team than positions), and converts them to square matrices by adding `Null` value rows or columns. Thus, the one row and one column rule still applies.] Then the matrix corresponding to the permutation which produces the least amount of points (since it is an inverted matrix) would be the solution. In this case, there are multiple solutions that are considered optimal so any of them are acceptable. Running the assignment problem on this problem gives us the indexes of elements which belong in a lineup that belongs to the set of optimal lineups. __Figure 5.6__ outlines this process for the sample case.
 
 ![Solution indexes and corresponding projected points](/Users/Devin/Projects/FFBaseball_Trade_Suggester_Thesis/thesis_lib/solution_indexes.png)
-
-TODO FIX 5.5, 5.6 WITH HIGH-RES
 
 Points Above Average (PAA)
 --------------------------
 
-Explain that once you have optimal lineups, you can figure out what the projected standard performance will be at each position. Take an average of entire league at each position then we can calculate the number of Points Above Average that each player is. This is a useful metric because it allows you to compare in context of league performance at the position. So now we can identify surplus for certain teams, even on the bench. It's possible a team could have 2 players who play only one position, U, but both are well above average for that position. So one of these is deemed surplus now with the help of PAA. Talk about how we can identify weaknesses as well based on PAA. Even identify a weak bench by computing how many points the bench is expected to contribute.
+Once optimal lineups have been calculated, the projected performance is known for every team in the league. This makes the calculation of the expected contribution at every position possible by taking an average of projected starters for every team and every position. Using this positional average, the number of Points Above Average (PAA) can be computed for every player in the league for every position the player contributes points to. This allows multi-positional eligibility to be assessed in context. The positional averages for a sample league from 2010 are listed in __Figure 5.7__. For example, a player like Miguel Cabrera, who we previously saw is projected at 615 points, who is eligible at `1B, 3B, and U` is most valuable when used at `3B` since that position has the lowest average of them all. The PAA metric is reflective of that fact.
+
+![Expected Starting Player Positional Avg Contributions](/Users/Devin/Projects/FFBaseball_Trade_Suggester_Thesis/thesis_lib/positional_averages.png)
 
 Identify Strengths and Weaknesses
 --------------------------
 
+Each team's strengths and weaknesses need to be identified before a trade suggestion can be made. The PAA statistic is very useful in determining strengths and weaknesses of a particular team. A team's relative strengths and weaknesses are easily determined by examining each player's PAA. A positive PAA value reflects an above league average and this player is considered a strength relative to the rest of the league. Vice versa for negative PAA values. It is possible that a team could have 2 players who only play the same position and while both have positive PAA, only one of them can start in the lineup. This is deemed a surplus and is easily identifiable algorithmically with the help of PAA. Additionally, by adding "`Bench`" as a few positions in the lineup, the optimal bench can be determined as well. This allows for identification of a weak (or strong) bench, potentially allowing for future features that focus on upgrading a bench by looking at the free agent pool.
+
 Suggest Trade Targets
 --------------------------
 
-Talk about how we can match up one team's marked strengths with another's marked weakness. Now the challenge is to figure out how fair a trade is. Often a position like C has fewer points scored...but this doesn't mean that you need to give up a 500 point C to get a 500 1B. The latter is very common. So the PAA metric comes in very handy in analyzing how many points are being exchanged across the trade. So multiple positions and players can be exchanged but really at the end of the day, the overall PAA evens everything out.
+Using the aforementioned strengths and weaknesses of every team, it seems fairly simple to match up one team's strengths with another's weaknesses and call them trade partners. However, trades are complicated in that not only do both teams prefer to deal from strengths to quench weaknesses, but they also need to be assured that the outgoing player value is close, if not equal, to the incoming player value. This situation is witnessed in the trade featured in __Figure 5.8__. In this case, Team A is actually "winning" the trade if only the raw net change in points is considered. But on further inspection using the PAA statistic (and accounting for positional differences), it becomes clear that while David Ortiz is projected significantly higher than Brian McCann in raw points, he is actually less valuable after factoring in that he is only eligible for `U` (the position with the highest positional average, see __Figure 5.7__) and that Brian McCann plays the position with the lowest average and vastly outproduces it. Thus, in determining "fair" trades, using overall net PAA change is actually a far better metric than just raw points projected.
 
-Provide simple example of 2 for 2 trade where it's even but 1 strong player at different positions on each side of the deal makes it even.
+![Positional PAA difference in trades](/Users/Devin/Projects/FFBaseball_Trade_Suggester_Thesis/thesis_lib/unfair_trade.png)
 
-Provide examples of 3 for 5 trades where the 5 side is actually getting ripped off.
+In order to further illustrate scenarios where the trade suggester proves useful, __Figure 5.9__ and __Figure 5.10__ show two trades that are unique in different aspects.
 
-Future Considerations
+![A deceptively fair trade with PAA](/Users/Devin/Projects/FFBaseball_Trade_Suggester_Thesis/thesis_lib/deceptively_fair_trade.png)
+
+![A deceptively unfair trade with PAA](/Users/Devin/Projects/FFBaseball_Trade_Suggester_Thesis/thesis_lib/deceptively_unfair_trade.png)
+
+The trade discussed in __Figure 5.9__ is unique because at first glance it seems as if Team A is giving up far too much - in raw points, Team A gives up 274 more points than it gains. However, in terms of PAA, the trade is remarkably fair (only a 2 point difference) and if it addresses each team's needs then it's worth it for both teams.
+
+The trade from __Figure 5.10__ exemplifies why this tool is so effective, trades involving numerous players (especially those of different positions) become easy to evaluate and find. In this case, intuitively Team A should accept that trade because it is receiving over 2200 raw points while only giving up about 750. But once again, the situation changes drastically once PAA and positional eligibility is considered - Team A is only receiving about 32 PAA while it is giving up about 144.
+
+Conclusion
 ==========================
+
+Trades, it turns out, are a difficult thing to measure objectively. Outside of projections and statistics, there can be attachment (or lack thereof) to players that keeps owners from pulling the trigger on specific trades. Sometimes, owners have hunches that they like to play out. After all, every year there are numerous players that blossom out of, seemingly, nowhere while some inexplicably bust.
+
+This application attempts to bring a statistical perspective to fantasy baseball trades. The frequency of trades has always been low in this virtual sport. The challenge for owners is to find a suitable trade partner, come up with an acceptable trade for both parties, and convince the other owner to accept the deal. When talks don't work out, the entire process needs to be repeated from the beginning. Often the typical fantasy owner has a job or occupation that prevents them from spending extra time investigating potential fantasy trades.
+
+For example, the trades in __Figure 5.9__ and __Figure 5.10__ are remarkably deceptive unless they are heavily analyzed. This tool only begins to scrape the surface of possibilities for analyzing fantasy baseball through a sabermetric lens. There are a number of things standing between this prototype and a product. Notably, currently it only works with an offline feed of data. In order to be released to the public, plug-ins are needed to feed data in from Yahoo! Fantasy leagues to dynamically suggest trades over the course of a season.
+
+With more time, I would have put more thought into projecting injuries. Specifically, being able to adjust the positional averages in a more intelligent manner than just taking an average of all starting players. This requires research into injury frequency and projected replacements from the waiver wire.
+
+Additionally, this tool can be expanded to manage the waiver wire by monitoring free agents over the course of the season and helping to optimize a team's lineup.
+
+However, the goal of this project was to build a prototype that proved it was possible to intelligently analyze a fantasy baseball league and suggest trades that were mutually beneficial - an idea that is thought to be a myth in the land of fantasy baseball.
